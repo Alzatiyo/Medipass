@@ -1,0 +1,86 @@
+[
+  {
+    "ContainingType": "Infrastructure.Adapters.Rest.FlightPlanController",
+    "Method": "GetAll",
+    "RelativePath": "api/FlightPlan",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Infrastructure.Adapters.Rest.FlightPlanController",
+    "Method": "Submit",
+    "RelativePath": "api/FlightPlan",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Infrastructure.Dtos.CreateFlightPlanRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Infrastructure.Adapters.Rest.FlightPlanController",
+    "Method": "GetById",
+    "RelativePath": "api/FlightPlan/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Infrastructure.Adapters.Rest.FlightPlanController",
+    "Method": "RegisterDelivery",
+    "RelativePath": "api/FlightPlan/{id}/delivery",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Infrastructure.Dtos.RegisterDeliveryRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Infrastructure.Adapters.Rest.FlightPlanController",
+    "Method": "UpdateStatus",
+    "RelativePath": "api/FlightPlan/{id}/status",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Infrastructure.Dtos.UpdateFlightStatusRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
