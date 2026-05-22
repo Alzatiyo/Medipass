@@ -1,9 +1,0 @@
-bin/
-obj/
-*.user
-.vs/
-.vscode/
-*.log
-docker/data/
-.env
-.env.local
