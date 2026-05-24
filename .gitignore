@@ -1,0 +1,42 @@
+## Ignore Visual Studio temporary files, build results, and IDE configurations
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results (compilation output)
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Re]leases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio cache and configuration directory
+.vs/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Package management
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
+
+# IDEs (Rider / Visual Studio Code)
+.idea/
+.vscode/
+
+# OS-generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

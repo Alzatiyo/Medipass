@@ -1,0 +1,132 @@
+version: '3.9'
+
+# ============================================================
+# MS-EHRLogger (.NET 8) — Docker Compose
+# ============================================================
+
+services:
+
+  # ── MongoDB exclusivo del MS-EHRLogger ────────────────────────────────
+  mongodb-ehr:
+    image: mongo:7.0
+    container_name: medipass-mongodb-ehr
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root_pass
+      MONGO_INITDB_DATABASE: ehr_db
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongodb_ehr_data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - medipass-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── RabbitMQ (broker compartido del ecosistema) ────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: medipass-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: medipass
+      RABBITMQ_DEFAULT_PASS: medipass_pass
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - medipass-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MS-EHRLogger (.NET 8) ──────────────────────────────────────────────
+  ms-ehrlogger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ms-ehrlogger
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://0.0.0.0:8083
+    ports:
+      - "8083:8083"
+    depends_on:
+      mongodb-ehr:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - medipass-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Prometheus ─────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: medipass-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - medipass-net
+
+  # ── Grafana ────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: medipass-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: medipass123
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - medipass-net
+
+  # ── Jaeger ─────────────────────────────────────────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: medipass-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "6831:6831/udp" # Jaeger agent UDP
+      - "14268:14268"   # HTTP collector
+    networks:
+      - medipass-net
+
+volumes:
+  mongodb_ehr_data:
+    name: medipass_mongodb_ehr
+  rabbitmq_data:
+    name: medipass_rabbitmq
+  grafana_data:
+    name: medipass_grafana
+
+networks:
+  medipass-net:
+    name: medipass-network
+    driver: bridge
