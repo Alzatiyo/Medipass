@@ -11,14 +11,12 @@ public class AppointmentConfirmedEvent
 {
     /// <summary>ID único del mensaje — usado por MS-EHRLogger para idempotencia.</summary>
     public string   EventId            { get; set; } = string.Empty;
-
     public string   AppointmentId      { get; set; } = string.Empty;
     public string   PatientId          { get; set; } = string.Empty;
     public string   DoctorId           { get; set; } = string.Empty;
 
     /// <summary>Debe enviarse como string (ej: "Oncología"), no como int del enum.</summary>
     public string   Specialty          { get; set; } = string.Empty;
-
     public DateTime ScheduledAt        { get; set; }
     public string   ConsultationRoom   { get; set; } = string.Empty;
     public string   InsuranceCode      { get; set; } = string.Empty;
