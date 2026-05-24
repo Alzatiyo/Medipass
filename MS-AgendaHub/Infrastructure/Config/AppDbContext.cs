@@ -51,7 +51,7 @@ public class AppDbContext : DbContext
             }
         );
 
-        // 2. Pacientes (Sincronización manual: mismos nombres/seguros que MS-Insurance)
+        // 2. Pacientes (Sincronización exacta con MS-Insurance)
         modelBuilder.Entity<PatientEntity>().HasData(
             new PatientEntity 
             { 
@@ -61,21 +61,33 @@ public class AppDbContext : DbContext
             },
             new PatientEntity 
             { 
-                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), 
+                Id = Guid.Parse("1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"), 
                 FullName = "Juan Pérez", 
                 InsuranceNumber = "INS-BASIC-ACTIVE" 
             },
             new PatientEntity 
             { 
-                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), 
+                Id = Guid.Parse("2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"), 
                 FullName = "Ana Gómez", 
                 InsuranceNumber = "INS-PREMIUM-ACTIVE" 
             },
             new PatientEntity 
             { 
-                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), 
+                Id = Guid.Parse("3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"), 
                 FullName = "Carlos Ruiz", 
                 InsuranceNumber = "INS-ONCOLOGY-ACTIVE" 
+            },
+            new PatientEntity 
+            { 
+                Id = Guid.Parse("4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"), 
+                FullName = "María López", 
+                InsuranceNumber = "INS-INACTIVE" 
+            },
+            new PatientEntity 
+            { 
+                Id = Guid.Parse("5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"), 
+                FullName = "Luis Silva", 
+                InsuranceNumber = "INS-EXPIRED" 
             }
         );
     }

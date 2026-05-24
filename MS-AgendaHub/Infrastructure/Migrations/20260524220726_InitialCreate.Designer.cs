@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260524213352_SeedData_DoctorsAndPatients")]
-    partial class SeedData_DoctorsAndPatients
+    [Migration("20260524220726_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -123,21 +123,33 @@ namespace Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Id = new Guid("1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"),
                             FullName = "Juan Pérez",
                             InsuranceNumber = "INS-BASIC-ACTIVE"
                         },
                         new
                         {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Id = new Guid("2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"),
                             FullName = "Ana Gómez",
                             InsuranceNumber = "INS-PREMIUM-ACTIVE"
                         },
                         new
                         {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            Id = new Guid("3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"),
                             FullName = "Carlos Ruiz",
                             InsuranceNumber = "INS-ONCOLOGY-ACTIVE"
+                        },
+                        new
+                        {
+                            Id = new Guid("4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"),
+                            FullName = "María López",
+                            InsuranceNumber = "INS-INACTIVE"
+                        },
+                        new
+                        {
+                            Id = new Guid("5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"),
+                            FullName = "Luis Silva",
+                            InsuranceNumber = "INS-EXPIRED"
                         });
                 });
 #pragma warning restore 612, 618

@@ -59,8 +59,8 @@ namespace Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("99999999-9999-9999-9999-999999999999"),
-                            ExpirationDate = new DateTime(2036, 5, 21, 0, 21, 14, 412, DateTimeKind.Utc).AddTicks(962),
+                            Id = new Guid("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                            ExpirationDate = new DateTime(2036, 5, 24, 22, 7, 44, 251, DateTimeKind.Utc).AddTicks(252),
                             InsuranceNumber = "INS-001",
                             IsActive = true,
                             PatientName = "Diego Rodríguez",
@@ -68,8 +68,8 @@ namespace Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            ExpirationDate = new DateTime(2031, 5, 21, 0, 21, 14, 412, DateTimeKind.Utc).AddTicks(979),
+                            Id = new Guid("1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"),
+                            ExpirationDate = new DateTime(2031, 5, 24, 22, 7, 44, 251, DateTimeKind.Utc).AddTicks(262),
                             InsuranceNumber = "INS-BASIC-ACTIVE",
                             IsActive = true,
                             PatientName = "Juan Pérez",
@@ -77,8 +77,8 @@ namespace Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            ExpirationDate = new DateTime(2031, 5, 21, 0, 21, 14, 412, DateTimeKind.Utc).AddTicks(981),
+                            Id = new Guid("2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"),
+                            ExpirationDate = new DateTime(2031, 5, 24, 22, 7, 44, 251, DateTimeKind.Utc).AddTicks(265),
                             InsuranceNumber = "INS-PREMIUM-ACTIVE",
                             IsActive = true,
                             PatientName = "Ana Gómez",
@@ -86,8 +86,8 @@ namespace Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            ExpirationDate = new DateTime(2031, 5, 21, 0, 21, 14, 412, DateTimeKind.Utc).AddTicks(984),
+                            Id = new Guid("3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"),
+                            ExpirationDate = new DateTime(2031, 5, 24, 22, 7, 44, 251, DateTimeKind.Utc).AddTicks(267),
                             InsuranceNumber = "INS-ONCOLOGY-ACTIVE",
                             IsActive = true,
                             PatientName = "Carlos Ruiz",
@@ -95,8 +95,8 @@ namespace Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            ExpirationDate = new DateTime(2028, 5, 21, 0, 21, 14, 412, DateTimeKind.Utc).AddTicks(985),
+                            Id = new Guid("4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"),
+                            ExpirationDate = new DateTime(2028, 5, 24, 22, 7, 44, 251, DateTimeKind.Utc).AddTicks(269),
                             InsuranceNumber = "INS-INACTIVE",
                             IsActive = false,
                             PatientName = "María López",
@@ -104,8 +104,8 @@ namespace Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            ExpirationDate = new DateTime(2025, 5, 21, 0, 21, 14, 412, DateTimeKind.Utc).AddTicks(987),
+                            Id = new Guid("5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"),
+                            ExpirationDate = new DateTime(2025, 5, 24, 22, 7, 44, 251, DateTimeKind.Utc).AddTicks(271),
                             InsuranceNumber = "INS-EXPIRED",
                             IsActive = true,
                             PatientName = "Luis Silva",

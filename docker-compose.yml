@@ -16,8 +16,13 @@ services:
       - ConnectionStrings__DefaultConnection=Server=sqlserver-medipass;Database=MS-AgendaHub;User Id=sa;Password=Medipass_Password123!;TrustServerCertificate=True
       - Services__InsuranceService=http://ms-insurance:5002
       - Services__EhrService=http://ms-ehrlogger:5003
+      - RabbitMQ__Host=rabbitmq-medipass
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=medipass
+      - RabbitMQ__Password=medipass_pass
     depends_on:
       - sqlserver-medipass
+      - rabbitmq-medipass
 
   ms-insurance:
     build:
@@ -33,22 +38,22 @@ services:
       - sqlserver-medipass
 
   # Preparado para el logger
-  # ms-ehrlogger:
-  #   build:
-  #     context: ./MS_EHRLOGGER
-  #     dockerfile: Dockerfile # Aun falta crear este Dockerfile
-  #   container_name: ms-ehrlogger
-  #   ports:
-  #     - "8083:8083" 
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #     - MongoDB__ConnectionString=mongodb://ehrlogger_user:ehrlogger_pass@mongodb-medipass:27017/ehr_db?authSource=admin
-  #     - RabbitMQ__Host=rabbitmq-medipass
-  #     - Jaeger__Host=jaeger-medipass
-  #   depends_on:
-  #     - mongodb-medipass
-  #     - rabbitmq-medipass
-  #     - jaeger-medipass
+  ms-ehrlogger:
+    build:
+      context: ./MS_EHRLOGGER
+      dockerfile: Dockerfile 
+    container_name: ms-ehrlogger
+    ports:
+      - "5003:5003" 
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - MongoDB__ConnectionString=mongodb://ehrlogger_user:ehrlogger_pass@mongodb-medipass:27017/ehr_db?authSource=admin
+      - RabbitMQ__Host=rabbitmq-medipass
+      - Jaeger__Host=jaeger-medipass
+    depends_on:
+      - mongodb-medipass
+      - rabbitmq-medipass
+      - jaeger-medipass
 
   # -----------------------------------------
   # Infraestructura (Bases de Datos y Colas)
