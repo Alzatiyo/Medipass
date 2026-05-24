@@ -4,8 +4,6 @@ namespace Infrastructure.Dtos;
 /// DTO que representa el evento publicado hacia RabbitMQ.
 /// Sus campos deben coincidir 1:1 con AppointmentConfirmedEvent.cs
 /// del MS-EHRLogger para garantizar la deserialización correcta.
-///
-/// ⚠️  Cualquier cambio en este archivo debe replicarse en MS-EHRLogger.
 /// </summary>
 public class AppointmentConfirmedEvent
 {
