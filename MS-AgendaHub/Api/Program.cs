@@ -1,4 +1,5 @@
-﻿using Infrastructure.Config;
+using Infrastructure.Config;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,33 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+// Aplicar migraciones automáticamente al iniciar con política de reintentos (necesario para Docker)
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    int retries = 10;
+    while (retries > 0)
+    {
+        try
+        {
+            context.Database.Migrate();
+            Console.WriteLine("Migraciones aplicadas correctamente y base de datos inicializada en AgendaHub.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            retries--;
+            Console.WriteLine($"Base de datos no disponible aún. Reintentando en 5 segundos... ({retries} intentos restantes). Detalle: {ex.Message}");
+            if (retries == 0)
+            {
+                Console.WriteLine("Error crítico: No se pudo establecer conexión con la base de datos tras varios intentos.");
+                throw;
+            }
+            Thread.Sleep(5000);
+        }
+    }
+}
 
 if (app.Environment.IsDevelopment() || true)
 {

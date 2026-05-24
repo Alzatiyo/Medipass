@@ -1,0 +1,8 @@
+# .dockerignore — MS-AgendaHub
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/NuGetFallbackFolder/
+**/*.user
+**/*.suo
