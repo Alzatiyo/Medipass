@@ -1,5 +1,5 @@
 using System.Text;
-using Application.Ports.Out;
+using Aplication.Ports.Out;
 using Domain.Models;
 using Infrastructure.Dtos;
 using Microsoft.Extensions.Logging;
@@ -82,7 +82,7 @@ public class EhrEventPublisherAdapter : IEhrEventPublisherPort, IDisposable
                 "[AgendaHub→EHR] Evento publicado. AppointmentId={AppointmentId} " +
                 "CorrelationId={CorrelationId} RoutingKey={RoutingKey}",
                 appointment.Id,
-                appointment.CorrelationId,
+                ehrEvent.CorrelationId,
                 RoutingKey);
         }
         catch (Exception ex)
@@ -105,17 +105,17 @@ public class EhrEventPublisherAdapter : IEhrEventPublisherPort, IDisposable
         new()
         {
             EventId            = Guid.NewGuid().ToString(),
-            AppointmentId      = appointment.Id,
-            PatientId          = appointment.Patient.Id,
-            DoctorId           = appointment.Doctor.Id,
-            Specialty          = appointment.Doctor.Specialty.ToString(),
-            ScheduledAt        = appointment.ScheduledAt,
-            ConsultationRoom   = appointment.ConsultationRoom   ?? string.Empty,
-            InsuranceCode      = appointment.InsuranceCode      ?? string.Empty,
-            ProcedureCode      = appointment.ProcedureCode      ?? string.Empty,
-            InsuranceValidated = appointment.InsuranceValidated,
-            Observations       = appointment.Observations       ?? string.Empty,
-            CorrelationId      = appointment.CorrelationId      ?? Guid.NewGuid().ToString(),
+            AppointmentId      = appointment.Id.ToString(),
+            PatientId          = appointment.PatientId.ToString(),
+            DoctorId           = appointment.DoctorId.ToString(),
+            Specialty          = appointment.Specialty,
+            ScheduledAt        = appointment.AppointmentDate,
+            ConsultationRoom   = string.Empty,
+            InsuranceCode      = string.Empty,
+            ProcedureCode      = appointment.ProcedureCode ?? string.Empty,
+            InsuranceValidated = true,
+            Observations       = string.Empty,
+            CorrelationId      = Guid.NewGuid().ToString(),
             SourceService      = "ms-agendahub",
             PublishedAt        = DateTime.UtcNow
         };

@@ -16,7 +16,7 @@ namespace Infrastructure.Config;
 /// Extensión de registro de dependencias de infraestructura.
 /// Un único punto de configuración para toda la capa de infraestructura.
 ///
-/// Registra: PostgreSQL, RabbitMQ, Adaptadores, Mappers y Casos de uso.
+/// Registra: SQL Server, RabbitMQ, Adaptadores, Mappers y Casos de uso.
 /// </summary>
 public static class InfrastructureServiceExtensions
 {
@@ -24,73 +24,18 @@ public static class InfrastructureServiceExtensions
         this IServiceCollection services,
         IConfiguration          configuration)
     {
-        // Configuracion PostgreSQL
+        // ── Base de Datos (SQL Server) ─────────────────────────────────────────
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
-                configuration.GetConnectionString(
-                    "DefaultConnection")));
+                configuration.GetConnectionString("DefaultConnection")));
 
-        // Mappers
-
-        services.AddScoped<IAppointmentMapper,
-            AppointmentMapper>();
-
-        // Repositorios
-
-        services.AddScoped<IAppointmentRepositoryPort,
-            AppointmentRepositoryAdapter>();
-
-        // Servicios externos
-
-        services.AddHttpClient<IInsuranceServicePort, InsuranceServiceAdapter>();
-
-        services.AddScoped<IDoctorAvailabilityPort,
-            DoctorAvailabilityAdapter>();
-
-        services.AddScoped<IEhrEventPublisherPort,
-            EhrEventPublisherAdapter>();
-
-        // Casos de uso
-
-        services.AddScoped<IAppointmentUseCasePort,
-            AppointmentUseCase>();
-
-        return services;
-    }
-        services
-            .AddDatabase(configuration)
-            .AddRabbitMQ(configuration)
-            .AddAdapters()
-            .AddMappers()
-            .AddUseCases();
-
-        return services;
-    }
-
-    // ── PostgreSQL ─────────────────────────────────────────────────────────
-
-    private static IServiceCollection AddDatabase(
-        this IServiceCollection services,
-        IConfiguration          configuration)
-    {
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("PostgreSQL")
-                ?? "Host=localhost;Port=5432;Database=agendahub_db;Username=agendahub_user;Password=agendahub_pass"));
+        // ── Repositorios ───────────────────────────────────────────────────────
 
         services.AddScoped<IAppointmentRepositoryPort, AppointmentRepositoryAdapter>();
-        return services;
-    }
 
-    // ── RabbitMQ ───────────────────────────────────────────────────────────
-    // Singleton: una sola conexión TCP compartida por toda la aplicación.
-    // IModel (channel) es creado dentro de cada adapter que lo necesite.
+        // ── RabbitMQ ───────────────────────────────────────────────────────────
 
-    private static IServiceCollection AddRabbitMQ(
-        this IServiceCollection services,
-        IConfiguration          configuration)
-    {
         services.AddSingleton<IConnection>(_ =>
         {
             var factory = new ConnectionFactory
@@ -102,40 +47,25 @@ public static class InfrastructureServiceExtensions
                 VirtualHost = "/"
             };
 
-            return factory.CreateConnection("ms-agendahub");  // Nombre visible en RabbitMQ UI
+            return factory.CreateConnection("ms-agendahub");
         });
 
-        // Singleton: el channel y la conexión se reutilizan durante toda la vida de la app
+        // ── Adaptadores REST y de Mensajería ───────────────────────────────────
+
+        services.AddHttpClient<IInsuranceServicePort, InsuranceServiceAdapter>();
+        services.AddScoped<IDoctorAvailabilityPort, DoctorAvailabilityAdapter>();
+        
+        // IEhrEventPublisherPort debe ser Singleton porque inyecta IConnection (que es Singleton)
         services.AddSingleton<IEhrEventPublisherPort, EhrEventPublisherAdapter>();
 
-        return services;
-    }
+        // ── Mappers ────────────────────────────────────────────────────────────
 
-    // ── Adaptadores REST externos ──────────────────────────────────────────
+        services.AddScoped<IAppointmentMapper, AppointmentMapper>();
 
-    private static IServiceCollection AddAdapters(
-        this IServiceCollection services)
-    {
-        services.AddHttpClient<IInsuranceServicePort, InsuranceServiceAdapter>();
-        services.AddHttpClient<IDoctorAvailabilityPort, DoctorAvailabilityAdapter>();
-        return services;
-    }
+        // ── Casos de uso ───────────────────────────────────────────────────────
 
-    // ── Mappers ────────────────────────────────────────────────────────────
-
-    private static IServiceCollection AddMappers(
-        this IServiceCollection services)
-    {
-        services.AddSingleton<IAppointmentMapper, AppointmentMapper>();
-        return services;
-    }
-
-    // ── Casos de uso (Application Layer) ──────────────────────────────────
-
-    private static IServiceCollection AddUseCases(
-        this IServiceCollection services)
-    {
         services.AddScoped<IAppointmentUseCasePort, AppointmentUseCase>();
+
         return services;
     }
 }
