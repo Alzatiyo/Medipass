@@ -1,4 +1,4 @@
-﻿using Aplication.Ports.Out;
+using Aplication.Ports.Out;
 using Domain.Models;
 using Infrastructure.Config;
 using Infrastructure.Mappers.Interface;
@@ -37,5 +37,11 @@ public class AppointmentRepositoryAdapter
         return await _context.Appointments.AnyAsync(a =>
             a.DoctorId == doctorId &&
             a.AppointmentDate == appointmentDate);
+    }
+
+    public async Task<string?> GetPatientInsuranceNumberAsync(Guid patientId)
+    {
+        var patient = await _context.Patients.FindAsync(patientId);
+        return patient?.InsuranceNumber;
     }
 }
