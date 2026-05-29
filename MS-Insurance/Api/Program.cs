@@ -1,16 +1,17 @@
 using Infrastructure.Config;
-using Microsoft.EntityFrameworkCore;
 using Infrastructure.Adapters.Persistence;
+using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar Kestrel para escuchar en el puerto HTTP 5002
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(5002);
 });
 
-// Registrar servicios de la capa de Infraestructura
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
@@ -19,15 +20,31 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
     {
-        Title = "MS-Insurance - Medipass",
-        Version = "v1",
-        Description = "Microservicio Síncrono para la validación de seguros y cobertura de procedimientos médicos."
+        Title       = "MS-Insurance - Medipass",
+        Version     = "v1",
+        Description = "Microservicio Síncrono para validación de seguros y cobertura de procedimientos médicos."
     });
 });
 
+builder.Services.AddHealthChecks();
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracingBuilder =>
+    {
+        tracingBuilder
+            .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .AddService("ms-insurance"))
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddJaegerExporter(opts =>
+            {
+                opts.AgentHost = builder.Configuration["Jaeger:Host"] ?? "localhost";
+                opts.AgentPort = int.Parse(builder.Configuration["Jaeger:Port"] ?? "6831");
+            });
+    });
+
 var app = builder.Build();
 
-// Aplicar migraciones y precargar base de datos automáticamente al iniciar con política de reintentos
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<InsuranceDbContext>();
@@ -37,37 +54,30 @@ using (var scope = app.Services.CreateScope())
         try
         {
             context.Database.Migrate();
-            Console.WriteLine("Migraciones aplicadas correctamente y base de datos inicializada.");
+            Console.WriteLine("Migraciones aplicadas correctamente en Insurance.");
             break;
         }
         catch (Exception ex)
         {
             retries--;
-            Console.WriteLine($"Base de datos no disponible aún. Reintentando en 5 segundos... ({retries} intentos restantes). Detalle: {ex.Message}");
-            if (retries == 0)
-            {
-                Console.WriteLine("Error crítico: No se pudo establecer conexión con la base de datos tras varios intentos.");
-                throw;
-            }
+            Console.WriteLine($"DB no disponible. Reintentando... ({retries} intentos). {ex.Message}");
+            if (retries == 0) throw;
             Thread.Sleep(5000);
         }
     }
 }
 
-// Configurar la canalización de solicitudes HTTP
-if (app.Environment.IsDevelopment() || true) // Permitir swagger siempre para desarrollo y pruebas
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MS-Insurance v1");
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "MS-Insurance v1");
+});
 
-// Deshabilitamos redirección HTTPS para facilitar pruebas y comunicación interna de microservicios
-// app.UseHttpsRedirection();
-
+app.UseRouting();
+app.UseHttpMetrics();        
 app.UseAuthorization();
 app.MapControllers();
+app.MapMetrics("/metrics");
+app.MapHealthChecks("/health");
 
 app.Run();
