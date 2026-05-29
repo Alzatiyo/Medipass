@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  - job_name: 'ms-agendahub'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['ms-agendahub:5001']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'ms-agendahub'
+
+  - job_name: 'ms-insurance'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['ms-insurance:5002']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'ms-insurance'
+
+  - job_name: 'ms-ehrlogger'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['ms-ehrlogger:5003']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'ms-ehrlogger'
+
+  - job_name: 'rabbitmq'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['rabbitmq-medipass:15692']

@@ -1,9 +1,6 @@
 version: '3.8'
 
 services:
-  # -----------------------------------------
-  # Microservicios
-  # -----------------------------------------
   ms-agendahub:
     build:
       context: ./MS-AgendaHub
@@ -20,9 +17,14 @@ services:
       - RabbitMQ__Port=5672
       - RabbitMQ__Username=medipass
       - RabbitMQ__Password=medipass_pass
+      - Jaeger__Host=jaeger-medipass
+      - Jaeger__Port=6831
     depends_on:
       - sqlserver-medipass
       - rabbitmq-medipass
+      - jaeger-medipass
+    networks:
+      - medipass-net
 
   ms-insurance:
     build:
@@ -34,30 +36,37 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver-medipass;Database=MS-Insurance;User Id=sa;Password=Medipass_Password123!;TrustServerCertificate=True
+      - Jaeger__Host=jaeger-medipass
+      - Jaeger__Port=6831
     depends_on:
       - sqlserver-medipass
+      - jaeger-medipass
+    networks:
+      - medipass-net
 
-  # Preparado para el logger
   ms-ehrlogger:
     build:
       context: ./MS_EHRLOGGER
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
     container_name: ms-ehrlogger
     ports:
-      - "5003:5003" 
+      - "5003:5003"
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - MongoDB__ConnectionString=mongodb://ehrlogger_user:ehrlogger_pass@mongodb-medipass:27017/ehr_db?authSource=admin
       - RabbitMQ__Host=rabbitmq-medipass
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=medipass
+      - RabbitMQ__Password=medipass_pass
       - Jaeger__Host=jaeger-medipass
+      - Jaeger__Port=6831
     depends_on:
       - mongodb-medipass
       - rabbitmq-medipass
       - jaeger-medipass
+    networks:
+      - medipass-net
 
-  # -----------------------------------------
-  # Infraestructura (Bases de Datos y Colas)
-  # -----------------------------------------
   sqlserver-medipass:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver-medipass
@@ -68,9 +77,11 @@ services:
       - MSSQL_SA_PASSWORD=Medipass_Password123!
     volumes:
       - sqlserver_data:/var/opt/mssql
+    networks:
+      - medipass-net
 
   mongodb-medipass:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: mongodb-medipass
     ports:
       - "27019:27017"
@@ -80,25 +91,81 @@ services:
       - MONGO_INITDB_DATABASE=admin
     volumes:
       - mongodb_data:/data/db
+    networks:
+      - medipass-net
 
   rabbitmq-medipass:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.13-management
     container_name: rabbitmq-medipass
     ports:
-      - "5672:5672"   # Puerto de AMQP
-      - "15672:15672" # Interfaz gráfica de administración
+      - "5672:5672"
+      - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=medipass
       - RABBITMQ_DEFAULT_PASS=medipass_pass
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - medipass-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Observabilidad
+  prometheus-medipass:
+    image: prom/prometheus:v2.52.0
+    container_name: prometheus-medipass
+    restart: unless-stopped
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - medipass-net
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  grafana-medipass:
+    image: grafana/grafana:10.4.2
+    container_name: grafana-medipass
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=medipass123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus-medipass
+    networks:
+      - medipass-net
 
   jaeger-medipass:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.57
     container_name: jaeger-medipass
+    restart: unless-stopped
     ports:
-      - "16686:16686"   # Interfaz web de Jaeger
-      - "6831:6831/udp" # Agente UDP
-      - "14268:14268"   # Recepción de trazas HTTP
+      - "16686:16686"   # Jaeger UI
+      - "6831:6831/udp" # Agente UDP (OpenTelemetry)
+      - "14268:14268"   # HTTP collector
+    networks:
+      - medipass-net
 
 volumes:
   sqlserver_data:
   mongodb_data:
+  rabbitmq_data:
+  grafana_data:
+
+networks:
+  medipass-net:
+    name: medipass-network
+    driver: bridge

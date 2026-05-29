@@ -1,13 +1,17 @@
 using Infrastructure.Config;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Forzar a MS-AgendaHub a correr en el puerto HTTP 5001
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(5001);
 });
+
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -15,17 +19,31 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
     {
-        Title = "MS-AgendaHub - Medipass",
-        Version = "v1",
+        Title       = "MS-AgendaHub - Medipass",
+        Version     = "v1",
         Description = "Microservicio Principal de Agendamiento de Citas Médicas Especializadas."
     });
 });
 
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHealthChecks();
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracingBuilder =>
+    {
+        tracingBuilder
+            .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .AddService("ms-agendahub"))
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddJaegerExporter(opts =>
+            {
+                opts.AgentHost = builder.Configuration["Jaeger:Host"] ?? "localhost";
+                opts.AgentPort = int.Parse(builder.Configuration["Jaeger:Port"] ?? "6831");
+            });
+    });
 
 var app = builder.Build();
 
-// Aplicar migraciones automáticamente al iniciar con política de reintentos (necesario para Docker)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -35,35 +53,30 @@ using (var scope = app.Services.CreateScope())
         try
         {
             context.Database.Migrate();
-            Console.WriteLine("Migraciones aplicadas correctamente y base de datos inicializada en AgendaHub.");
+            Console.WriteLine("Migraciones aplicadas correctamente en AgendaHub.");
             break;
         }
         catch (Exception ex)
         {
             retries--;
-            Console.WriteLine($"Base de datos no disponible aún. Reintentando en 5 segundos... ({retries} intentos restantes). Detalle: {ex.Message}");
-            if (retries == 0)
-            {
-                Console.WriteLine("Error crítico: No se pudo establecer conexión con la base de datos tras varios intentos.");
-                throw;
-            }
+            Console.WriteLine($"DB no disponible. Reintentando... ({retries} intentos). {ex.Message}");
+            if (retries == 0) throw;
             Thread.Sleep(5000);
         }
     }
 }
 
-if (app.Environment.IsDevelopment() || true)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MS-AgendaHub v1");
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "MS-AgendaHub v1");
+});
 
-// Deshabilitar redirección HTTPS para entorno local
-// app.UseHttpsRedirection();
+app.UseRouting();
+app.UseHttpMetrics();        
 app.UseAuthorization();
 app.MapControllers();
+app.MapMetrics("/metrics");  
+app.MapHealthChecks("/health");
 
 app.Run();

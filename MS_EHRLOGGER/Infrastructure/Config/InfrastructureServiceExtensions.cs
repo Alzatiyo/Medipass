@@ -13,11 +13,6 @@ using RabbitMQ.Client;
 
 namespace MsEhrLogger.Infrastructure.Config;
 
-/// <summary>
-/// Registro de dependencias de infraestructura.
-/// Espejo exacto de InfrastructureServiceExtensions.cs del MS-AgendaHub.
-/// Centraliza toda la inyección de dependencias en un método de extensión.
-/// </summary>
 public static class InfrastructureServiceExtensions
 {
     public static IServiceCollection AddInfrastructure(
@@ -33,7 +28,6 @@ public static class InfrastructureServiceExtensions
         return services;
     }
 
-    // ── MongoDB ────────────────────────────────────────────────────────────
 
     private static IServiceCollection AddMongoDB(
         this IServiceCollection services,
@@ -47,7 +41,6 @@ public static class InfrastructureServiceExtensions
         return services;
     }
 
-    // ── RabbitMQ ───────────────────────────────────────────────────────────
 
     private static IServiceCollection AddRabbitMQ(
         this IServiceCollection services,
@@ -57,14 +50,34 @@ public static class InfrastructureServiceExtensions
         {
             var factory = new ConnectionFactory
             {
-                HostName         = configuration["RabbitMQ:Host"]     ?? "localhost",
-                Port             = int.Parse(configuration["RabbitMQ:Port"] ?? "5672"),
-                UserName         = configuration["RabbitMQ:Username"]  ?? "medipass",
-                Password         = configuration["RabbitMQ:Password"]  ?? "medipass_pass",
-                VirtualHost      = "/",
-                DispatchConsumersAsync = true // Necesario para AsyncEventingBasicConsumer
+                HostName               = configuration["RabbitMQ:Host"]     ?? "localhost",
+                Port                   = int.Parse(configuration["RabbitMQ:Port"] ?? "5672"),
+                UserName               = configuration["RabbitMQ:Username"] ?? "medipass",
+                Password               = configuration["RabbitMQ:Password"] ?? "medipass_pass",
+                VirtualHost            = "/",
+                DispatchConsumersAsync = true
             };
-            return factory.CreateConnection();
+
+            int retries = 10;
+            while (retries > 0)
+            {
+                try
+                {
+                    Console.WriteLine("[EHR] Intentando conectar a RabbitMQ...");
+                    var connection = factory.CreateConnection("ms-ehrlogger");
+                    Console.WriteLine("[EHR] Conexión a RabbitMQ establecida.");
+                    return connection;
+                }
+                catch (Exception ex)
+                {
+                    retries--;
+                    Console.WriteLine($"[EHR] RabbitMQ no disponible. Reintentando en 5s... ({retries} intentos restantes). {ex.Message}");
+                    if (retries == 0) throw;
+                    Thread.Sleep(5000);
+                }
+            }
+
+            throw new Exception("No se pudo conectar a RabbitMQ tras múltiples intentos.");
         });
 
         services.AddSingleton<IEhrEventPublisherPort, EhrEventPublisherAdapter>();
@@ -72,31 +85,21 @@ public static class InfrastructureServiceExtensions
         return services;
     }
 
-    // ── Servicios de aplicación y dominio ─────────────────────────────────
 
     private static IServiceCollection AddApplicationServices(
         this IServiceCollection services)
     {
-        // Mapper — espejo de AppointmentMapper registration
         services.AddSingleton<IEhrRecordMapper, EhrRecordMapper>();
-
-        // Servicio de dominio puro
         services.AddSingleton<EhrRecordService>();
-
-        // Caso de uso — espejo de AppointmentUseCase registration
         services.AddScoped<IEhrLoggerUseCasePort, EhrLoggerUseCase>();
-
         return services;
     }
 
-    // ── Observabilidad: OpenTelemetry / Jaeger ────────────────────────────
 
     private static IServiceCollection AddObservability(
         this IServiceCollection services,
         IConfiguration          configuration)
     {
-        var jaegerEndpoint = configuration["Jaeger:Endpoint"] ?? "http://localhost:14268/api/traces";
-
         services.AddOpenTelemetry()
             .WithTracing(builder =>
             {
